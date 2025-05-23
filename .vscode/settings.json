@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "vector": "cpp",
+        "filesystem": "cpp",
+        "functional": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "variant": "cpp",
+        "xstring": "cpp"
+    }
+}
