@@ -3,6 +3,21 @@
 
 #include <glm/gtc/constants.hpp>
 
+struct Parallelogram
+{
+    glm::vec2 origin;
+    glm::vec2 vectorA;
+    glm::vec2 vectorB;
+
+    glm::vec2 get_random_point_inside() const {
+        float u = utils::rand(0.0f, 1.0f);
+        float v = utils::rand(0.0f, 1.0f);
+        return origin + u * vectorA + v * vectorB;
+    }
+};
+
+Parallelogram g_parallelogram;
+
 struct Particle
 {
     glm::vec2 position;
@@ -21,8 +36,13 @@ struct Particle
 
     Particle()
     {
-        position.x = utils::rand(-gl::window_aspect_ratio(), gl::window_aspect_ratio());
-        position.y = utils::rand(-1.f, 1.f);
+        //position.x = utils::rand(-gl::window_aspect_ratio(), gl::window_aspect_ratio());
+        //position.y = utils::rand(-1.f, 1.f);
+
+        position = g_parallelogram.get_random_point_inside();
+
+        //position.x = utils::rand(-0.2f, 0.2f);
+        //position.y = utils::rand(-0.5f, 0.5f);
 
         float angle = utils::rand(0.f, 2.f * glm::pi<float>());
         float speed = utils::rand(0.1f, 0.3f);
@@ -35,7 +55,7 @@ struct Particle
 
         age = 0.0f;
         lifetime = utils::rand(20.0f, 50.0f);
-        initial_radius = 0.02f * (lifetime * 0.1);
+        initial_radius = 0.01f;//0.02f * (lifetime * 0.1);
 
         startColor = glm::vec4(
         utils::rand(0.5f, 1.0f),
@@ -103,7 +123,6 @@ struct Particle
         return glm::mix(startColor, endColor, easedT);
     }
 
-
     bool isDead() const
     {
         return age >= lifetime;
@@ -155,7 +174,8 @@ void check_and_draw_intersection(glm::vec2 seg1_start, glm::vec2 seg1_end, glm::
     }
 }
 
-glm::vec2 getSegmentNormal(glm::vec2 start, glm::vec2 end) {
+glm::vec2 getSegmentNormal(glm::vec2 start, glm::vec2 end)
+{
     glm::vec2 direction = glm::normalize(end - start);
     return glm::vec2(-direction.y, direction.x);
 }
@@ -167,8 +187,12 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
+    g_parallelogram.origin = glm::vec2(-0.4f, 0.0f);
+    g_parallelogram.vectorA = glm::vec2(0.6f, -0.4f);
+    g_parallelogram.vectorB = glm::vec2(0.8f, 0.6f);
+
     // TODO: create an array of particles
-    std::vector<Particle> particles(100);
+    std::vector<Particle> particles(1000);
 
     //segment 1
     glm::vec2 seg_start = glm::vec2(-1.f, 0.0f);
@@ -179,7 +203,6 @@ int main()
 
     float thickness = 0.01f;
     glm::vec4 color = glm::vec4(1, 1, 1, 1);
-    
 
     while (gl::window_is_open())
     {
@@ -200,7 +223,7 @@ int main()
         {
             glm::vec2 prev_pos = particle.position;
 
-            particle.update(dt);
+            //particle.update(dt);
 
             if (auto intersect = intersection(seg_start, seg_end, prev_pos, particle.position)) {
                 
