@@ -3,6 +3,11 @@
 
 #include <glm/gtc/constants.hpp>
 
+/*struct Circle
+{
+    
+};*/
+
 struct Parallelogram
 {
     glm::vec2 origin;
@@ -180,6 +185,34 @@ glm::vec2 getSegmentNormal(glm::vec2 start, glm::vec2 end)
     return glm::vec2(-direction.y, direction.x);
 }
 
+
+void draw_parametric(std::function<glm::vec2(float)> const& parametric_func, float t_min = 0.0f, float t_max = 1.0f, int steps = 100)
+{
+    glm::vec2 prev = parametric_func(t_min);
+    for (int i = 1; i <= steps; ++i) {
+        float t = t_min + (t_max - t_min) * i / float(steps);
+        glm::vec2 curr = parametric_func(t);
+        utils::draw_line(prev, curr, 0.01, glm::vec4(1, 1, 1, 1));
+        prev = curr;
+    }
+}
+
+auto test_line = [](float t) {
+    return glm::vec2(t, t);
+};
+
+auto circle = [](float t) {
+    float r = 0.5f;
+    return glm::vec2(r * cos(t), r * sin(t));
+};
+
+auto heart = [](float t){
+    float scale = 0.05;
+    float x = scale * 16 *pow(sin(t), 3);
+    float y = scale * (13 * cos(t) - 5 * cos(2*t) - 2 * cos(3*t) - cos(4*t));
+    return glm::vec2(x, y);
+};
+
 int main()
 {
     gl::init("Particules!");
@@ -192,7 +225,7 @@ int main()
     g_parallelogram.vectorB = glm::vec2(0.8f, 0.6f);
 
     // TODO: create an array of particles
-    std::vector<Particle> particles(1000);
+    //std::vector<Particle> particles(1000);                    //Create particles
 
     //segment 1
     glm::vec2 seg_start = glm::vec2(-1.f, 0.0f);
@@ -211,11 +244,11 @@ int main()
 
         const float dt = gl::delta_time_in_seconds();
 
-        particles.erase(
+        /*        particles.erase(
             std::remove_if(particles.begin(), particles.end(),
                 [](const Particle& p) { return p.isDead(); }),
             particles.end()
-        );
+        );  
 
         // TODO update particles
         // TODO render particles
@@ -247,8 +280,11 @@ int main()
         utils::draw_line(seg_start, seg_end, thickness, color);
         utils::draw_line(seg2_start, gl::mouse_position(), thickness, color);
         
-        check_and_draw_intersection(seg_start, seg_end, seg2_start, gl::mouse_position());
+        check_and_draw_intersection(seg_start, seg_end, seg2_start, gl::mouse_position());      */
         
+        //draw_parametric(test_line, 0.0f, 0.5f, 100);
+        //draw_parametric(circle, 0.0f, glm::two_pi<float>(), 100);
+        draw_parametric(heart, 0.0f, glm::two_pi<float>(), 200);
         
     }
 }
