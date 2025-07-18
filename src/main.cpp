@@ -36,6 +36,41 @@ auto bezier3(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, cons
     };
 }
 
+float distance_squared_to_bezier(float t, glm::vec2 point) {
+    glm::vec2 bez = bezier3({-.3f, -.3f}, {-0.2f, -.3f}, gl::mouse_position(), {.8f, -.3f})(t);
+    return glm::dot(bez - point, bez - point);
+}
+
+float find_closest_t(glm::vec2 point, int iterations = 20, float lr = 0.01f) {
+    float t = 0.5f;
+    for (int i = 0; i < iterations; ++i) {
+        float epsilon = 0.001f;
+        float d1 = distance_squared_to_bezier(t - epsilon, point);
+        float d2 = distance_squared_to_bezier(t + epsilon, point);
+        float grad = (d2 - d1) / (2 * epsilon);
+        t -= lr * grad;
+        t = glm::clamp(t, 0.f, 1.f);
+    }
+    return t;
+}
+
+glm::vec2 get_bezier_normal(float t) {
+    glm::vec2 p0 = {-.3f, -.3f};
+    glm::vec2 p1 = {-0.2f, 0.5f};
+    glm::vec2 p2 = gl::mouse_position();
+    glm::vec2 p3 = {.8f, .5f};
+
+    glm::vec2 d = -3.f * (1 - t) * (1 - t) * p0
+                  + 3.f * (1 - t) * (1 - t) * p1
+                  - 6.f * (1 - t) * t * p1
+                  + 6.f * (1 - t) * t * p2
+                  - 3.f * t * t * p2
+                  + 3.f * t * t * p3;
+
+    glm::vec2 tangent = glm::normalize(d);
+    return glm::vec2(-tangent.y, tangent.x);
+}
+
 struct Particle
 {
     glm::vec2 position;
@@ -53,24 +88,34 @@ struct Particle
 
     float t;
 
-    Particle(float t_) : t(t_)
+    Particle(float t_, const std::function<glm::vec2(float)>& curve) : t(t_)
     {
-        //position.x = utils::rand(-gl::window_aspect_ratio(), gl::window_aspect_ratio());
-        //position.y = utils::rand(-1.f, 1.f);
+        position.x = utils::rand(-gl::window_aspect_ratio(), gl::window_aspect_ratio());
+        position.y = utils::rand(0.8f, 1.f);
+        
+        //position.x = utils::rand(-0.2f, 0.2f);
+        //position.y = utils::rand(-0.5f, 0.5f);
 
         //position = g_parallelogram.get_random_point_inside();
 
         //float t = utils::rand(0.0f, 1.0f);
-        position = bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f})(t);
+        //position = curve(t);
 
-        //position.x = utils::rand(-0.2f, 0.2f);
-        //position.y = utils::rand(-0.5f, 0.5f);
+        float epsilon = 0.001f;
+        glm::vec2 tangent = glm::normalize(curve(t + epsilon) - curve(t));
+        glm::vec2 normal(-tangent.y, tangent.x);
 
-        float angle = utils::rand(0.f, 2.f * glm::pi<float>());
+        if (utils::rand(0.f, 1.f) > 0.5f)
+            normal = -normal;
+
         float speed = utils::rand(0.1f, 0.3f);
+        velocity = normal * speed;
 
-        velocity.x = cos(angle) * speed;
-        velocity.y = sin(angle) * speed;
+        //float angle = utils::rand(0.f, 2.f * glm::pi<float>());
+        //float speed = utils::rand(0.1f, 0.3f);
+
+        //velocity.x = cos(angle) * speed;
+        //velocity.y = sin(angle) * speed;
 
         mass = 1.f;
         acceleration = glm::vec2(0.0f);
@@ -103,12 +148,26 @@ struct Particle
     void update(float dt)
     {
         age += dt;
-
-        /*glm::vec2 gravity(0.0f, -0.5f * mass);
+        
+        glm::vec2 gravity(0.0f, -0.5f * mass);
         acceleration = glm::vec2(0.0f);
-        //applyForce(gravity);
+        applyForce(gravity);
 
-        glm::vec2 airFriction = -0.5f * velocity;
+        float t_closest = find_closest_t(position);
+        glm::vec2 closest_point = bezier3({-.3f, -.3f}, {-0.2f, -.3f}, gl::mouse_position(), {.8f, -.3f})(t_closest);
+
+        float dist = glm::length(position - closest_point);
+
+        glm::vec2 normal = get_bezier_normal(t_closest);
+
+        float strength = glm::clamp(0.5f / (dist * dist + 0.05f), 0.0f, 5.0f);
+        glm::vec2 force = normal * strength * 0.5f;
+
+        applyForce(force);
+
+        
+
+        /*glm::vec2 airFriction = -0.5f * velocity;
         //applyForce(airFriction);
 
         glm::vec2 mousePos = gl::mouse_position();
@@ -117,18 +176,18 @@ struct Particle
 
         glm::vec2 dir = position - mousePos;
         glm::vec2 vortexForce = glm::vec2(-dir.y, dir.x) * 0.3f;
-        //applyForce(vortexForce);
+        //applyForce(vortexForce);*/
         
         velocity += acceleration * dt;
-        position += velocity * dt;*/
+        position += velocity * dt;
 
-        glm::vec2 prev_pos = position;
+        /*glm::vec2 prev_pos = position;
 
         //float t = utils::rand(0.0f, 1.0f);
         t += 0.1f * dt;
         if (t > 1.0f) t -= 1.0f;
 
-        position = bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f})(t);
+        position = bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f})(t);*/
     }
 
     float getCurrentRadius() const
@@ -253,8 +312,6 @@ auto bezier2(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2) {
 }
 
 
-
-
 int binomial(int n, int k) {
     if (k > n) return 0;
     if (k == 0 || k == n) return 1;
@@ -307,9 +364,11 @@ int main()
     std::vector<Particle> particles;
     particles.reserve(particle_count);
 
+    auto curve = bezier3({-.3f, -.3f}, {-0.2f, -.3f}, gl::mouse_position(), {.8f, -.3f});
+
     for (int i = 0; i < particle_count; ++i) {
         float t = i / float(particle_count - 1); // entre 0 et 1 inclus
-        particles.emplace_back(t);
+        particles.emplace_back(t, curve);
     }
 
 
@@ -374,7 +433,7 @@ int main()
 
         //draw_parametric(bezier1({-.3f, -.3f}, {0.5f, 0.5f}));
         //draw_parametric(bezier2({-.3f, -.3f}, gl::mouse_position(), {.8f, .5f}));
-        draw_parametric(bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f}));
+        draw_parametric(bezier3({-.3f, -.3f}, {-0.2f, -.3f}, gl::mouse_position(), {.8f, -.3f}));
 
         //draw_parametric(bezier1_bernstein({-.3f, -.3f}, {0.5f, 0.5f}));
         //draw_parametric(bezier2_bernstein({-.3f, -.3f}, gl::mouse_position(), {.8f, .5f}));
