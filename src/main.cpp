@@ -23,6 +23,19 @@ struct Parallelogram
 
 Parallelogram g_parallelogram;
 
+auto bezier3(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3) {
+    return [p0, p1, p2, p3](float t) {
+        glm::vec2 q0 = (1-t)*p0 + t*p1;
+        glm::vec2 q1 = (1-t)*p1 + t*p2;
+        glm::vec2 q2 = (1-t)*p2 + t*p3;
+        
+        glm::vec2 r0 = (1-t)*q0 + t*q1;
+        glm::vec2 r1 = (1-t)*q1 + t*q2;
+        
+        return (1-t)*r0 + t*r1;
+    };
+}
+
 struct Particle
 {
     glm::vec2 position;
@@ -44,7 +57,10 @@ struct Particle
         //position.x = utils::rand(-gl::window_aspect_ratio(), gl::window_aspect_ratio());
         //position.y = utils::rand(-1.f, 1.f);
 
-        position = g_parallelogram.get_random_point_inside();
+        //position = g_parallelogram.get_random_point_inside();
+
+        float t = utils::rand(0.0f, 1.0f);
+        position = bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f})(t);
 
         //position.x = utils::rand(-0.2f, 0.2f);
         //position.y = utils::rand(-0.5f, 0.5f);
@@ -87,7 +103,7 @@ struct Particle
     {
         age += dt;
 
-        glm::vec2 gravity(0.0f, -0.5f * mass);
+        /*glm::vec2 gravity(0.0f, -0.5f * mass);
         acceleration = glm::vec2(0.0f);
         //applyForce(gravity);
 
@@ -103,7 +119,14 @@ struct Particle
         //applyForce(vortexForce);
         
         velocity += acceleration * dt;
-        position += velocity * dt;
+        position += velocity * dt;*/
+
+        glm::vec2 prev_pos = position;
+
+        float t = utils::rand(0.0f, 1.0f);
+        t += 0.1f * dt;
+
+        position = bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f})(t);
     }
 
     float getCurrentRadius() const
@@ -192,7 +215,7 @@ void draw_parametric(std::function<glm::vec2(float)> const& parametric_func, flo
     for (int i = 1; i <= steps; ++i) {
         float t = t_min + (t_max - t_min) * i / float(steps);
         glm::vec2 curr = parametric_func(t);
-        utils::draw_line(prev, curr, 0.01, glm::vec4(1, 1, 1, 1));
+        utils::draw_line(prev, curr, 0.005, glm::vec4(1, 1, 1, 1));
         prev = curr;
     }
 }
@@ -227,18 +250,7 @@ auto bezier2(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2) {
     };
 }
 
-auto bezier3(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3) {
-    return [p0, p1, p2, p3](float t) {
-        glm::vec2 q0 = (1-t)*p0 + t*p1;
-        glm::vec2 q1 = (1-t)*p1 + t*p2;
-        glm::vec2 q2 = (1-t)*p2 + t*p3;
-        
-        glm::vec2 r0 = (1-t)*q0 + t*q1;
-        glm::vec2 r1 = (1-t)*q1 + t*q2;
-        
-        return (1-t)*r0 + t*r1;
-    };
-}
+
 
 
 int binomial(int n, int k) {
@@ -285,8 +297,9 @@ int main()
     g_parallelogram.vectorA = glm::vec2(0.6f, -0.4f);
     g_parallelogram.vectorB = glm::vec2(0.8f, 0.6f);
 
+    
     // TODO: create an array of particles
-    //std::vector<Particle> particles(1000);                    //Create particles
+    std::vector<Particle> particles(100);                    //Create particles
 
     //segment 1
     glm::vec2 seg_start = glm::vec2(-1.f, 0.0f);
@@ -305,7 +318,7 @@ int main()
 
         const float dt = gl::delta_time_in_seconds();
 
-        /*        particles.erase(
+        particles.erase(
             std::remove_if(particles.begin(), particles.end(),
                 [](const Particle& p) { return p.isDead(); }),
             particles.end()
@@ -317,16 +330,16 @@ int main()
         {
             glm::vec2 prev_pos = particle.position;
 
-            //particle.update(dt);
+            particle.update(dt);
 
-            if (auto intersect = intersection(seg_start, seg_end, prev_pos, particle.position)) {
+            /*if (auto intersect = intersection(seg_start, seg_end, prev_pos, particle.position)) {
                 
                 glm::vec2 normal = getSegmentNormal(seg_start, seg_end);
 
                 particle.bounce(*intersect, normal);
 
                 particle.position = *intersect + normal * 0.001f;
-            }
+            }*/
 
             utils::draw_disk(
                 particle.position,  // Position 
@@ -335,13 +348,13 @@ int main()
                 particle.getCurrentColor()
             );
 
-            check_and_draw_intersection(seg_start, seg_end, prev_pos, particle.position);
+            //check_and_draw_intersection(seg_start, seg_end, prev_pos, particle.position);
         };
 
-        utils::draw_line(seg_start, seg_end, thickness, color);
-        utils::draw_line(seg2_start, gl::mouse_position(), thickness, color);
+        //utils::draw_line(seg_start, seg_end, thickness, color);
+        //utils::draw_line(seg2_start, gl::mouse_position(), thickness, color);
         
-        check_and_draw_intersection(seg_start, seg_end, seg2_start, gl::mouse_position());      */
+        //check_and_draw_intersection(seg_start, seg_end, seg2_start, gl::mouse_position());
         
         //draw_parametric(test_line, 0.0f, 0.5f, 100);
         //draw_parametric(circle, 0.0f, glm::two_pi<float>(), 100);
@@ -349,10 +362,11 @@ int main()
 
         //draw_parametric(bezier1({-.3f, -.3f}, {0.5f, 0.5f}));
         //draw_parametric(bezier2({-.3f, -.3f}, gl::mouse_position(), {.8f, .5f}));
-        //draw_parametric(bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f}));
+        draw_parametric(bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f}));
 
         //draw_parametric(bezier1_bernstein({-.3f, -.3f}, {0.5f, 0.5f}));
         //draw_parametric(bezier2_bernstein({-.3f, -.3f}, gl::mouse_position(), {.8f, .5f}));
-        draw_parametric(bezier3_bernstein({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f}));
+        //draw_parametric(bezier3_bernstein({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f}));
+
     }
 }
