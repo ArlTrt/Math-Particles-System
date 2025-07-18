@@ -51,15 +51,16 @@ struct Particle
     glm::vec4 startColor;
     glm::vec4 endColor;
 
+    float t;
 
-    Particle()
+    Particle(float t_) : t(t_)
     {
         //position.x = utils::rand(-gl::window_aspect_ratio(), gl::window_aspect_ratio());
         //position.y = utils::rand(-1.f, 1.f);
 
         //position = g_parallelogram.get_random_point_inside();
 
-        float t = utils::rand(0.0f, 1.0f);
+        //float t = utils::rand(0.0f, 1.0f);
         position = bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f})(t);
 
         //position.x = utils::rand(-0.2f, 0.2f);
@@ -123,8 +124,9 @@ struct Particle
 
         glm::vec2 prev_pos = position;
 
-        float t = utils::rand(0.0f, 1.0f);
+        //float t = utils::rand(0.0f, 1.0f);
         t += 0.1f * dt;
+        if (t > 1.0f) t -= 1.0f;
 
         position = bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f})(t);
     }
@@ -299,7 +301,17 @@ int main()
 
     
     // TODO: create an array of particles
-    std::vector<Particle> particles(100);                    //Create particles
+    //std::vector<Particle> particles(100);                    //Create particles
+
+    const int particle_count = 100;
+    std::vector<Particle> particles;
+    particles.reserve(particle_count);
+
+    for (int i = 0; i < particle_count; ++i) {
+        float t = i / float(particle_count - 1); // entre 0 et 1 inclus
+        particles.emplace_back(t);
+    }
+
 
     //segment 1
     glm::vec2 seg_start = glm::vec2(-1.f, 0.0f);
