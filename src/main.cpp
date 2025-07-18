@@ -213,6 +213,67 @@ auto heart = [](float t){
     return glm::vec2(x, y);
 };
 
+auto bezier1(const glm::vec2& p0, const glm::vec2& p1) {
+    return [p0, p1](float t) {
+        return (1-t)*p0 + t*p1;
+    };
+}
+
+auto bezier2(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2) {
+    return [p0, p1, p2](float t) {
+        glm::vec2 q0 = (1-t)*p0 + t*p1;
+        glm::vec2 q1 = (1-t)*p1 + t*p2;
+        return (1-t)*q0 + t*q1;
+    };
+}
+
+auto bezier3(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3) {
+    return [p0, p1, p2, p3](float t) {
+        glm::vec2 q0 = (1-t)*p0 + t*p1;
+        glm::vec2 q1 = (1-t)*p1 + t*p2;
+        glm::vec2 q2 = (1-t)*p2 + t*p3;
+        
+        glm::vec2 r0 = (1-t)*q0 + t*q1;
+        glm::vec2 r1 = (1-t)*q1 + t*q2;
+        
+        return (1-t)*r0 + t*r1;
+    };
+}
+
+
+int binomial(int n, int k) {
+    if (k > n) return 0;
+    if (k == 0 || k == n) return 1;
+    return binomial(n - 1, k - 1) + binomial(n - 1, k);
+}
+
+float bernstein(int n, int i, float t) {
+    return binomial(n, i) * pow(t, i) * pow(1 - t, n - i);
+}
+
+auto bezier1_bernstein(const glm::vec2& p0, const glm::vec2& p1) {
+    return [p0, p1](float t) {
+        return bernstein(1, 0, t) * p0 + bernstein(1, 1, t) * p1;
+    };
+}
+
+auto bezier2_bernstein(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2) {
+    return [p0, p1, p2](float t) {
+        return bernstein(2, 0, t) * p0 
+             + bernstein(2, 1, t) * p1 
+             + bernstein(2, 2, t) * p2;
+    };
+}
+
+auto bezier3_bernstein(const glm::vec2& p0, const glm::vec2& p1, const glm::vec2& p2, const glm::vec2& p3) {
+    return [p0, p1, p2, p3](float t) {
+        return bernstein(3, 0, t) * p0 
+             + bernstein(3, 1, t) * p1 
+             + bernstein(3, 2, t) * p2 
+             + bernstein(3, 3, t) * p3;
+    };
+}
+
 int main()
 {
     gl::init("Particules!");
@@ -284,7 +345,14 @@ int main()
         
         //draw_parametric(test_line, 0.0f, 0.5f, 100);
         //draw_parametric(circle, 0.0f, glm::two_pi<float>(), 100);
-        draw_parametric(heart, 0.0f, glm::two_pi<float>(), 200);
-        
+        //draw_parametric(heart, 0.0f, glm::two_pi<float>(), 200);
+
+        //draw_parametric(bezier1({-.3f, -.3f}, {0.5f, 0.5f}));
+        //draw_parametric(bezier2({-.3f, -.3f}, gl::mouse_position(), {.8f, .5f}));
+        //draw_parametric(bezier3({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f}));
+
+        //draw_parametric(bezier1_bernstein({-.3f, -.3f}, {0.5f, 0.5f}));
+        //draw_parametric(bezier2_bernstein({-.3f, -.3f}, gl::mouse_position(), {.8f, .5f}));
+        draw_parametric(bezier3_bernstein({-.3f, -.3f}, {-0.2f, 0.5f}, gl::mouse_position(), {.8f, .5f}));
     }
 }
